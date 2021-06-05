@@ -102,7 +102,7 @@ describe('BlueICO', function () {
       );
     });
 
-    it('transfer of 5 tokens through function buyTokens()', async function () {
+    it('transfer of tokens through function buyTokens()', async function () {
       // Javascript converts number + string into a string
       await blueico.connect(investor2).buyTokens({ value: 5 * token_price });
       expect(await coin.balanceOf(investor2.address)).to.equal(5 * token_price + price_gap_decimals);
