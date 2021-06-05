@@ -34,7 +34,7 @@ contract Calculator is Ownable {
     modifier haveEnoughTokens() {
         require(
             _coin.balanceOf(msg.sender) >= _calcPrice,
-            "Calculator: you need more tokens to perform this operation "
+            "Calculator: you need to buy more tokens to perform this operation"
         );
         _;
     }
@@ -46,13 +46,52 @@ contract Calculator is Ownable {
 
     function add(int256 a, int256 b) public haveEnoughTokens returns (bool) {
         _pay(msg.sender);
-        emit Calculation("add", msg.sender, a, b, a + b);
+        emit Calculation("add", msg.sender, a, b, _add(a, b));
         return true;
     }
 
     function sub(int256 a, int256 b) public haveEnoughTokens returns (bool) {
         _pay(msg.sender);
-        emit Calculation("sub", msg.sender, a, b, a - b);
+        emit Calculation("sub", msg.sender, a, b, _sub(a, b));
         return true;
+    }
+
+    function mul(int256 a, int256 b) public haveEnoughTokens returns (bool) {
+        _pay(msg.sender);
+        emit Calculation("mul", msg.sender, a, b, _mul(a, b));
+        return true;
+    }
+
+    function div(int256 a, int256 b) public haveEnoughTokens returns (bool) {
+        _pay(msg.sender);
+        emit Calculation("div", msg.sender, a, b, _div(a, b));
+        return true;
+    }
+
+    function mod(int256 a, int256 b) public haveEnoughTokens returns (bool) {
+        _pay(msg.sender);
+        emit Calculation("mod", msg.sender, a, b, _mod(a, b));
+        return true;
+    }
+
+    function _add(int256 a, int256 b) internal pure returns (int256) {
+        return a + b;
+    }
+
+    function _sub(int256 a, int256 b) internal pure returns (int256) {
+        return a - b;
+    }
+
+    function _mul(int256 a, int256 b) internal pure returns (int256) {
+        return a * b;
+    }
+
+    function _mod(int256 a, int256 b) internal pure returns (int256) {
+        return a % b;
+    }
+
+    function _div(int256 a, int256 b) internal pure returns (int256) {
+        require(b != 0, "Can not divide by zero");
+        return a / b;
     }
 }
