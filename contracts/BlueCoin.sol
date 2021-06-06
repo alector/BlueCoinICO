@@ -16,7 +16,7 @@ contract BlueCoin is ERC20 {
      * @param owner_ the address of the owner
      * @param owner_ the total supply of tokens
      * By default all tokens be assigned to the balance of the owner
-     * The _mint() is build-in function of ERC20 standard, and allegates totalSuppy to _balances[owner_]
+     * The _mint() is build-in function of ERC20 standard, and allocates totalSuppy to _balances[owner_]
      * The Total supply belongs to owner_ and is accessible through totalSupply(),also equal to balanceOf(owner_)
 
      **/
