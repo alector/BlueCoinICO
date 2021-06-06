@@ -6,6 +6,14 @@ import "./BlueCoin.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+/**
+ * @title Initial Coin Offering (ICO) of BlueCoin (BCN)
+ * @author Alector
+ * @dev BlueCoin is a token that is going to be bought as a coin in the Initial Coin Offering  (BlueCoinICO.sol).
+ * The code is also inspired by Hardhat-ICO by Jeremie, found here https://github.com/Dzheremilz/Hardhat-ICO
+ * Users can buy coins from BlueCoinICO and then consume them to use other services like Calculator.sol.
+ * Only part of the totalSupply of BlueCoin will be approved (allowances) to our ICO  contract address
+ **/
 contract BlueICO is Ownable {
     // library usage
     using Address for address payable;
@@ -16,7 +24,6 @@ contract BlueICO is Ownable {
     uint256 public currentTime;
     uint256 public timeEnd;
     uint256 private _numTokensApproved;
-    address public ICOAddress;
 
     enum State {inactive, active}
     State public curStatus;
@@ -24,15 +31,16 @@ contract BlueICO is Ownable {
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed recipient, uint256 amount);
 
-    constructor(address tokenAddress) {
-        _coin = BlueCoin(tokenAddress);
+    /**
+     * @dev the Initial Coin Offering of a Coin that is deployed in a certai address
+     * @param coinAddress address of deployed ERC20 token BlueCoin
+     * By default the owner of the coin becomes the owner of the ICO
+     * Only part of the totalSupply of BlueCoin will be assigned to our ICO  contract address
+     **/
+    constructor(address coinAddress) {
+        _coin = BlueCoin(coinAddress);
         _owner = _coin.getOwner();
         Ownable.transferOwnership(_owner);
-        ICOAddress = address(this);
-
-        // Only part of the totalSupply of BlueCoin will be assigned to our ICO  contract address
-        // _numTokensApproved = numTokensApproved_;
-
         tokenPrice = 1e9; // 1 gwei expressed in wei
         curStatus = State.active;
         timeEnd = block.timestamp + 1209600; // two weeks in seconds
@@ -48,6 +56,11 @@ contract BlueICO is Ownable {
         _;
     }
 
+    /**
+     * @dev get the state of the contract (active or inactive)
+     * after a given period of time the contract becomes inactive
+     * @return state of contract (active or inactive)
+     **/
     function getState() public view returns (State) {
         if (block.timestamp >= timeEnd) {
             return State.inactive; // State.inactive;
@@ -56,57 +69,70 @@ contract BlueICO is Ownable {
         }
     }
 
+    /**
+     * @dev get balance of ether in currenct contract
+     * @return balance of ether
+     **/
     function getContractBalance() public view returns (uint256) {
         return address(this).balance;
     }
 
+    /**
+     * @dev get balance of ether of certain user
+     * @return balance of ether
+     **/
     function getMyTokenBalance() public view returns (uint256) {
         return _coin.balanceOf(msg.sender);
     }
 
+    /**
+     * @dev get total balance of tokens of deployed BlueCoin
+     * @return balance of ether
+     **/
     function getTotalSupply() public view returns (uint256) {
         return _coin.totalSupply();
     }
 
-    // when someone sends DIRECTLY ether to this account.
-    // example: use Metamask & send ether  directly to the contract address
+    /**
+     * @dev the owner approves initial supply to the ICO
+     * This is not necessary to be used, it cone be done directly in the test.
+     * @param numTokensApproved the number of Tokens approved to this ICO, this number can be sold to various users
+     **/
+    function approveInitialSupply(uint256 numTokensApproved) public onlyOwner {
+        _coin.approve(address(this), numTokensApproved);
+    }
+
+    /**
+     * @dev direct transfer of ether to the contract
+     * For example, use Metamask & send ether  directly to the address of tye deployed BlueICO contract, and the function receive() will be invoked.
+     **/
     receive() external payable {
         buyTokens();
     }
 
-    // initial designation by the owner
-    // this could be done directly in the test
-    // with the approve() from the Coin contract
-    function approveInitialSupply(uint256 numTokensApproved) public onlyOwner {
-        _coin.approve(ICOAddress, numTokensApproved);
-    }
-
+    /**
+     * @dev transfer of ether to the contract through a function
+     **/
     function buyTokens() public payable {
         _buyTokens(msg.sender, msg.value);
     }
 
-    // Send ether through a function.
+    /**
+     * @dev internal function to buy tokens
+     * @param sender the address of the msg.sender that buys tokens
+     * @param amount the amount of Ether send to the contract that will be converted to tokens
+     * IMPORTANT. The amount can only be 10**9 or multiplications of that number. The function assumes that the amount is already checked (in Javascript) to fit that requirement.
+     * IMPORTANT. No need for additional require to check if ammount exists in the balance of the sender. ERC20 _transfer() is applied inside transferTo() and this already REQUIRES & CHECKS if amount exists.
+     **/
     function _buyTokens(address sender, uint256 amount) private onlyActive {
-        // 1 token has 18 zeros in decimals
-        // when you buy 1 token, you buy 18 zeros
-        // when the price of 1 token is 1 gwei
-        // then if you give 1 gwei you get 18 zeros in your balance
-        // the msg.sender counts in wei, so if you give 10*9 wei, you have to make a calculation that gives you 18 zeros in your account. 10*9 times 10*9 gives 18 zeros (1 full token or 18 zeros of tokens)
-
         uint256 numTokens = amount * 10**9;
-
-        // NOTE: ERC20 _transfer() is applied inside transferTo() and it already REQUIRES & CHECKS if amount exists
-        // _msgSender of buyTokens is the msg.sender
-        // _msgSender of transferFrom will be the address of the conttact
         _coin.transferFrom(_owner, sender, numTokens);
-
         emit Deposit(sender, amount);
     }
 
-    // function convertToTokens(uint256 inputWei) private view returns (uint256) {
-    //     return inputWei / tokenPrice;
-    // }
-
+    /**
+     * @dev owner withdraws ether after contract expiration date
+     **/
     function withdrawEther() public onlyOwner onlyInactive {
         uint256 depositBalance = address(this).balance;
         require(depositBalance > 0, "FlashCoinICO: can not withdraw 0 ether");
@@ -114,6 +140,10 @@ contract BlueICO is Ownable {
         payable(_owner).sendValue(depositBalance);
         emit Withdraw(_owner, depositBalance);
     }
+
+    /**
+     * @dev get owner of the contract
+     **/
 
     function getOwner() public view returns (address) {
         return Ownable.owner();
