@@ -99,10 +99,7 @@ describe('BlueICO', function () {
     });
 
     it('can not transfer Ether if it is not divisible by the price', async function () {
-      // Javascript converts number + string into a string
-
       let failure = blueico.connect(investor2).buyTokens({ value: 5 * token_price + 1 });
-
       await expect(failure).to.revertedWith(
         "BlueICO: Contract doesn't give back change. The received amount must be divisible by price."
       );

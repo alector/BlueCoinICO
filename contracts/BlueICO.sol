@@ -47,12 +47,12 @@ contract BlueICO is Ownable {
     }
 
     modifier onlyActive {
-        require(block.timestamp < timeEnd, "This operation is reserved for active contracts.");
+        require(block.timestamp < timeEnd, "BlueICO: This operation is reserved for active contracts.");
         _;
     }
 
     modifier onlyInactive {
-        require(block.timestamp >= timeEnd, "This operation is reserved for inactive contracts.");
+        require(block.timestamp >= timeEnd, "BlueICO: This operation is reserved for inactive contracts.");
         _;
     }
 
@@ -122,9 +122,13 @@ contract BlueICO is Ownable {
      * @param sender the address of the msg.sender that buys tokens
      * @param amount the amount of Ether send to the contract that will be converted to tokens
      * IMPORTANT. The amount can only be 10**9 or multiplications of that number. The function assumes that the amount is already checked (in Javascript) to fit that requirement.
-     * IMPORTANT. No need for additional require to check if ammount exists in the balance of the sender. ERC20 _transfer() is applied inside transferTo() and this already REQUIRES & CHECKS if amount exists.
+     * IMPORTANT. There is no need for additional require to check if ammount exists in the balance of the sender. ERC20 _transfer() is applied inside transferTo() and this already REQUIRES & CHECKS if amount exists.
      **/
     function _buyTokens(address sender, uint256 amount) private onlyActive {
+        require(
+            amount % 10**9 == 0,
+            "BlueICO: Contract doesn't give back change. The received amount must be divisible by price."
+        );
         uint256 numTokens = amount * 10**9;
         _coin.transferFrom(_owner, sender, numTokens);
         emit Deposit(sender, amount);
