@@ -18,7 +18,6 @@ contract BlueCoin is ERC20 {
      * By default all tokens be assigned to the balance of the owner
      * The _mint() is build-in function of ERC20 standard, and allocates totalSuppy to _balances[owner_]
      * The Total supply belongs to owner_ and is accessible through totalSupply(),also equal to balanceOf(owner_)
-
      **/
     constructor(address owner_, uint256 totalSupply_) ERC20("BlueCoin", "BCN") {
         _owner = owner_;
